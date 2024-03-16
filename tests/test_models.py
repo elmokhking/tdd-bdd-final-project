@@ -37,6 +37,7 @@ DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
 
+
 ######################################################################
 #  P R O D U C T   M O D E L   T E S T   C A S E S
 ######################################################################
@@ -130,7 +131,7 @@ class TestProductModel(unittest.TestCase):
         # Assert that it was assigned an id and shows up in the database
         self.assertIsNotNone(product.id)
         self.assertEqual(len(Product.all()), 1)
-        product.description="Just a simple description to test with hola"
+        product.description = "Just a simple description to test with hola"
         product.update()
         product_from_db = Product.find(product.id)
         self.assertEqual(product_from_db.id, product.id)
@@ -152,25 +153,26 @@ class TestProductModel(unittest.TestCase):
         "it should retreive all product"
         self.assertEqual(len(Product.all()), 0)
         for i in range(5):
+            logger.debug(i)
             product = ProductFactory()
             logger.debug(product)
             product.id = None
             product.create()
-        
         self.assertEqual(len(Product.all()), 5)
 
     def test_find_product_by_name(self):
         "it should find a product by name"
         self.assertEqual(len(Product.all()), 0)
-        products=[]
+        products = []
         for i in range(5):
+            logger.debug(i)
             product = ProductFactory()
             product.create()
-            products.append(product)    
-        first_product_name=products[0].name
-        name_occurences=len([product for product in products if product.name == first_product_name])
-        found=Product.find_by_name(first_product_name)
-        name_occurences_in_db=found.count()
+            products.append(product)
+        first_product_name = products[0].name
+        name_occurences = len([product for product in products if product.name == first_product_name])
+        found = Product.find_by_name(first_product_name)
+        name_occurences_in_db = found.count()
         self.assertEqual(name_occurences_in_db, name_occurences)
         for product in found:
             self.assertEqual(product.name, first_product_name)
@@ -178,31 +180,33 @@ class TestProductModel(unittest.TestCase):
     def test_find_product_by_availability(self):
         "it should find a product by name"
         self.assertEqual(len(Product.all()), 0)
-        products=[]
+        products = []
         for i in range(10):
+            logger.debug(i)
             product = ProductFactory()
             product.create()
-            products.append(product)    
-        first_product_avl=products[0].available
-        avl_occurences=len([product for product in products if product.available == first_product_avl])
-        found=Product.find_by_availability(first_product_avl)
-        avl_occurences_in_db=found.count()
+            products.append(product)
+        first_product_avl = products[0].available
+        avl_occurences = len([product for product in products if product.available == first_product_avl])
+        found = Product.find_by_availability(first_product_avl)
+        avl_occurences_in_db = found.count()
         self.assertEqual(avl_occurences_in_db, avl_occurences)
         for product in found:
             self.assertEqual(product.available, first_product_avl)
 
     def test_find_product_by_category(self):
         "it should find a product by category"
-        self.assertEqual(len(Product.all()),0)
-        products=[]
+        self.assertEqual(len(Product.all()), 0)
+        products = []
         for i in range(10):
+            logger.debug(i)
             product = ProductFactory()
             product.create()
-            products.append(product)    
-        first_product_cat=products[0].category
-        cat_occurences=len([product for product in products if product.category== first_product_cat])
-        found=Product.find_by_category(first_product_cat)
-        cat_occurences_in_db=found.count()
+            products.append(product)
+        first_product_cat = products[0].category
+        cat_occurences = len([product for product in products if product.category == first_product_cat])
+        found = Product.find_by_category(first_product_cat)
+        cat_occurences_in_db = found.count()
         self.assertEqual(cat_occurences_in_db, cat_occurences)
         for product in found:
             self.assertEqual(product.category, first_product_cat)

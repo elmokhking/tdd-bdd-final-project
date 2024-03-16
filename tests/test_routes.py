@@ -25,7 +25,7 @@ Test cases can be run with the following:
     nosetests --stop tests/test_service.py:TestProductService
 """
 import os
-import logging
+import logging , json
 from decimal import Decimal
 from unittest import TestCase
 from service import app
@@ -178,3 +178,66 @@ class TestProductRoutes(TestCase):
         data = response.get_json()
         # logging.debug("data = %s", data)
         return len(data)
+
+    def test_read_product(self):
+        "It should read a product"
+        test_product = self._create_products()[0]
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(data["name"], test_product.name)
+        self.assertEqual(data["description"], test_product.description)
+        self.assertEqual(Decimal(data["price"]), test_product.price)
+        self.assertEqual(data["available"], test_product.available)
+        self.assertEqual(data["category"], test_product.category.name)
+
+    def test_read_product_not_found(self):
+        "It should return not found for product that doesn't exist"
+        test_product_id = 0
+        response = self.client.get(f"{BASE_URL}/{test_product_id}")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_product(self):
+        "it should update a product"
+        product = self._create_products()[0]
+        product_to_update = product.serialize()
+        product_to_update["name"] = "BIMO"
+        logging.debug("update product name from  %s to %s", product.name, product_to_update["name"])
+        response = self.client.put(f"{BASE_URL}/{product.id}", json=product_to_update)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        product_from_db = Product.find(product.id)
+        self.assertEqual(product_from_db.name, product_to_update["name"])
+    
+    def test_update_product_not_found(self):
+        """it should update not found product"""
+        product = Product()
+        data = {}
+        response = self.client.put(f"{BASE_URL}/0", json=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_product(self):
+        """it should delete a product"""
+        product = self._create_products()[0]
+        self.assertEqual(len(Product.all()),1)
+        logging.debug("delete a product with id : %s", product.id)
+        response = self.client.delete(f"{BASE_URL}/{product.id}")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(Product.all()), 0)
+
+    def test_delete_product_not_found(self):
+        """it should delete not found product"""
+        product_id = 0
+        response = self.client.delete(f"{BASE_URL}/{product_id}")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_all(self):
+        """test get all products"""
+        products = self._create_products(10)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        logging.debug("data loaded : %s", data)
+        self.assertEqual(len(Product.all()),len(data))
+
+
+
