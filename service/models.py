@@ -122,6 +122,7 @@ class Product(db.Model):
             "available": self.available,
             "category": self.category.name  # convert enum to string
         }
+    
 
     def deserialize(self, data: dict):
         """

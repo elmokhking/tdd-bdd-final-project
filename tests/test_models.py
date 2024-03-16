@@ -31,10 +31,11 @@ from service.models import Product, Category, db
 from service import app
 from tests.factories import ProductFactory
 
+logger = logging.getLogger("flask.app")
+
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
-
 
 ######################################################################
 #  P R O D U C T   M O D E L   T E S T   C A S E S
@@ -104,3 +105,104 @@ class TestProductModel(unittest.TestCase):
     #
     # ADD YOUR TEST CASES HERE
     #
+
+    def test_read_product(self):
+        "it should read a product"
+        product = ProductFactory()
+        logger.debug(product)
+        product.id = None
+        product.create()
+        # Assert that it was assigned an id and shows up in the database
+        self.assertIsNotNone(product.id)
+        product_from_db = Product.find(product.id)
+        self.assertEqual(product_from_db.name,product.name)
+        self.assertEqual(product_from_db.description,product.description)
+        self.assertEqual(Decimal(product_from_db.price),product.price)
+        self.assertEqual(product_from_db.available, product.available)
+        self.assertEqual(product_from_db.category, product.category)
+
+    def test_update_product(self):
+        "it should update a product"
+        product = ProductFactory()
+        logger.debug(product)
+        product.id = None
+        product.create()
+        # Assert that it was assigned an id and shows up in the database
+        self.assertIsNotNone(product.id)
+        self.assertEqual(len(Product.all()),1)
+        product.description="Just a simple description to test with hola"
+        product.update()
+        product_from_db = Product.find(product.id)
+        self.assertEqual(product_from_db.id,product.id)
+        self.assertEqual(product_from_db.description,product.description)
+
+    def test_delete_product(self):
+        "it should delete a product"
+        product = ProductFactory()
+        logger.debug(product)
+        product.id = None
+        product.create()
+        # Assert that it was assigned an id and shows up in the database
+        self.assertIsNotNone(product.id)
+        self.assertEqual(len(Product.all()),1)
+        product.delete()
+        self.assertEqual(len(Product.all()),0)
+
+    def test_all_products(self):
+        "it should retreive all product"
+        self.assertEqual(len(Product.all()),0)
+        for i in range(5):
+            product = ProductFactory()
+            logger.debug(product)
+            product.id = None
+            product.create()
+        
+        self.assertEqual(len(Product.all()),5)
+
+    def test_find_product_by_name(self):
+        "it should find a product by name"
+        self.assertEqual(len(Product.all()),0)
+        products=[]
+        for i in range(5):
+            product = ProductFactory()
+            product.create()
+            products.append(product)    
+        first_product_name=products[0].name
+        name_occurences=len([product for product in products if product.name == first_product_name])
+        found=Product.find_by_name(first_product_name)
+        name_occurences_in_db=found.count()
+        self.assertEqual(name_occurences_in_db,name_occurences)
+        for product in found:
+            self.assertEqual(product.name,first_product_name)
+
+    def test_find_product_by_availability(self):
+        "it should find a product by name"
+        self.assertEqual(len(Product.all()),0)
+        products=[]
+        for i in range(10):
+            product = ProductFactory()
+            product.create()
+            products.append(product)    
+        first_product_avl=products[0].available
+        avl_occurences=len([product for product in products if product.available == first_product_avl])
+        found=Product.find_by_availability(first_product_avl)
+        avl_occurences_in_db=found.count()
+        self.assertEqual(avl_occurences_in_db,avl_occurences)
+        for product in found:
+            self.assertEqual(product.available,first_product_avl)
+
+    def test_find_product_by_availability(self):
+        "it should find a product by name"
+        self.assertEqual(len(Product.all()),0)
+        products=[]
+        for i in range(10):
+            product = ProductFactory()
+            product.create()
+            products.append(product)    
+        first_product_avl=products[0].available
+        avl_occurences=len([product for product in products if product.available == first_product_avl])
+        found=Product.find_by_availability(first_product_avl)
+        avl_occurences_in_db=found.count()
+        self.assertEqual(avl_occurences_in_db,avl_occurences)
+        for product in found:
+            self.assertEqual(product.available,first_product_avl)
