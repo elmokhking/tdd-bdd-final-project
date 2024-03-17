@@ -55,7 +55,7 @@ Scenario: Read a Product
     And I should see "Cloths" in the "Category" dropdown
     And I should see "59.95" in the "Price" field
 
-Scenario: Read a Product
+Scenario: Update a Product
     When I visit the "Home Page"
     And I set the "Name" to "Hat"
     And I press the "search" button

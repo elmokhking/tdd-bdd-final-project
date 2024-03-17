@@ -116,13 +116,15 @@ def step_impl(context, element_name):
 @then('I should see "{text_string}" in the "{element_name}" field')
 def step_impl(context, text_string, element_name):
     element_id = ID_PREFIX + element_name.lower().replace(' ', '_')
-    found = WebDriverWait(context.driver, context.wait_seconds).until(
-        expected_conditions.text_to_be_present_in_element_value(
-            (By.ID, element_id),
-            text_string
-        )
-    )
-    assert(found)
+    # found = WebDriverWait(context.driver, context.wait_seconds).until(
+    #     expected_conditions.text_to_be_present_in_element_value(
+    #         (By.ID, element_id),
+    #         text_string
+    #     )
+    # )
+    element=context.driver.find_element_by_id(element_id)
+    exist=text_string in element.get_attribute('value')
+    assert exist == True
 
 @when('I change "{element_name}" to "{text_string}"')
 def step_impl(context, element_name, text_string):
@@ -132,3 +134,35 @@ def step_impl(context, element_name, text_string):
     )
     element.clear()
     element.send_keys(text_string)
+
+@when(u'I press the "{element_name}" button')
+def step_impl(context,element_name):
+    element_id = element_name.lower().replace(' ', '_')+'-btn'
+    element = context.driver.find_element_by_id(element_id)
+    element.click()
+
+@then(u'I should see the message "{message}"')
+def step_impl(context,message):
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, 'flash_message'),
+            message
+        )
+    )
+    assert(found)
+
+@then(u'I should not see "{message}" in the results')
+def step_impl(context,message):
+    element = context.driver.find_element_by_id('search_results')
+    message_exists= (message in element.text)
+    assert message_exists == False
+
+@then('I should see "{name}" in the results')
+def step_impl(context, name):
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, 'search_results'),
+            name
+        )
+    )
+    assert(found)
