@@ -20,7 +20,7 @@ Product Store Service with UI
 """
 from flask import jsonify, request, abort
 from flask import url_for  # noqa: F401 pylint: disable=unused-import
-from service.models import Product
+from service.models import Product, Category
 from service.common import status  # HTTP Status Codes
 from . import app
 
@@ -104,13 +104,29 @@ def create_products():
 @app.route("/products", methods=["GET"])
 def read_all_products():
     "read all products"
-    app.logger.debug("request to fetch all products")
-    message=[]
-    products=Product.all()
+    message = []
+    searched_name = request.args.get("name")
+    searched_category = request.args.get("category")
+    searched_availabe = request.args.get("available")
+    products = []
+    if searched_name:
+        app.logger.debug("request to fetch all products by name : %s", searched_name)
+        products = Product.find_by_name(searched_name)
+    elif searched_category:
+        category = getattr(Category, searched_category.upper())
+        app.logger.debug("request to fetch all products by category : %s", category)
+        products = Product.find_by_category(category)
+    elif searched_availabe:
+        app.logger.debug("request to fetch all products by availability : %s", searched_availabe)
+        products = Product.find_by_availability(searched_availabe)
+    else:
+        app.logger.debug("request to fetch all products")
+        products = Product.all()
     for product in products:
-        data=product.serialize()
+        data = product.serialize()
         message.append(data)
     return message, status.HTTP_200_OK
+
 
 ######################################################################
 # R E A D   A   P R O D U C T
@@ -149,7 +165,7 @@ def update_products(product_id):
     data = request.get_json()
     app.logger.info("Processing: %s", data)
     product = Product.find(product_id)
-    if not product :
+    if not product:
         message = f"product with id:{id} not found"
         return jsonify(message), status.HTTP_404_NOT_FOUND
     product.deserialize(data)
@@ -178,7 +194,7 @@ def delete_products(product_id):
     """delete a product"""
     app.logger.info("Request to Delete a Product...")
     product = Product.find(product_id)
-    if not product :
+    if not product:
         message = f"product with id:{id} not found"
         return jsonify(message), status.HTTP_404_NOT_FOUND
     product.delete()

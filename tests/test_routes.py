@@ -25,9 +25,10 @@ Test cases can be run with the following:
     nosetests --stop tests/test_service.py:TestProductService
 """
 import os
-import logging , json
+import logging
 from decimal import Decimal
 from unittest import TestCase
+from urllib.parse import quote_plus
 from service import app
 from service.common import status
 from service.models import db, init_db, Product
@@ -207,10 +208,9 @@ class TestProductRoutes(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         product_from_db = Product.find(product.id)
         self.assertEqual(product_from_db.name, product_to_update["name"])
-    
+
     def test_update_product_not_found(self):
         """it should update not found product"""
-        product = Product()
         data = {}
         response = self.client.put(f"{BASE_URL}/0", json=data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -218,7 +218,7 @@ class TestProductRoutes(TestCase):
     def test_delete_product(self):
         """it should delete a product"""
         product = self._create_products()[0]
-        self.assertEqual(len(Product.all()),1)
+        self.assertEqual(len(Product.all()), 1)
         logging.debug("delete a product with id : %s", product.id)
         response = self.client.delete(f"{BASE_URL}/{product.id}")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -231,13 +231,58 @@ class TestProductRoutes(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_list_all(self):
-        """test get all products"""
+        """it should get all products"""
         products = self._create_products(10)
         response = self.client.get(BASE_URL)
+        self.assertEqual(len(Product.all()), len(products))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         logging.debug("data loaded : %s", data)
-        self.assertEqual(len(Product.all()),len(data))
+        self.assertEqual(len(Product.all()), len(data))
 
+    def test_list_by_name(self):
+        """"it should return all products filtered by name"""
+        products = self._create_products(10)
+        first_product_name = products[0].name
+        encoded_name = quote_plus(first_product_name)
+        logging.debug("seraching all product with the name : %s", encoded_name)
+        param = "name="+encoded_name
+        logging.debug("call : %s?%s", BASE_URL, param)
+        response = self.client.get(BASE_URL, query_string=param)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        found = response.get_json()
+        inserted = [product for product in products if product.name == first_product_name]
+        self.assertEqual(len(found), len(inserted))
+        for product_found in found:
+            self.assertEqual(product_found["name"], first_product_name)
 
+    def test_list_by_category(self):
+        """"it should return all products filtered by category"""
+        products = self._create_products(10)
+        first_product = products[0].serialize()
+        first_product_category = first_product["category"]
+        logging.debug("seraching all product with the category : %s", first_product_category)
+        encoded_category = quote_plus(first_product_category)
+        param = "category="+encoded_category
+        response = self.client.get(BASE_URL, query_string=param)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        found = response.get_json()
+        inserted = [product for product in products if product.serialize()["category"] == first_product_category]
+        self.assertEqual(len(found), len(inserted))
+        for product_found in found:
+            self.assertEqual(product_found["category"], first_product_category)
 
+    def test_list_by_availability(self):
+        """it should return all products filtered by availability"""
+        products = self._create_products(10)
+        first_product_availability = products[0].available
+        logging.debug("seraching all product with the availability : %s", first_product_availability)
+        param = "available="+str(first_product_availability)
+        logging.debug("call : %s?%s", BASE_URL, param)
+        response = self.client.get(BASE_URL, query_string=param)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        found = response.get_json()
+        inserted = [product for product in products if product.available == first_product_availability]
+        self.assertEqual(len(found), len(inserted))
+        for product_found in found:
+            self.assertEqual(product_found["available"], first_product_availability)
